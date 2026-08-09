@@ -94,6 +94,28 @@ export class ErrorNotificationsInterceptor implements HttpInterceptor {
       tap({
         next: () => {},
         error: (httpError: HttpErrorResponse) => {
+          console.log('[ErrorInterceptor] HTTP Error caught:', {
+            url: req.url,
+            method: req.method,
+            status: httpError?.status,
+            error: httpError,
+          });
+
+          // Check for Symbol.iterator errors in HTTP responses
+
+          const errorMessage = httpError?.message || httpError?.error?.message || '';
+
+          if (errorMessage.includes('Symbol.iterator')) {
+            console.error('='.repeat(80));
+            console.error('🔴 SYMBOL.ITERATOR ERROR IN HTTP INTERCEPTOR');
+            console.error('='.repeat(80));
+            console.error('Request URL:', req.url);
+            console.error('Request Method:', req.method);
+            console.error('HTTP Error:', httpError);
+            console.error('Error Message:', errorMessage);
+            console.error('='.repeat(80));
+          }
+
           if (this._shouldSilenceRequest(req)) {
             return;
           }

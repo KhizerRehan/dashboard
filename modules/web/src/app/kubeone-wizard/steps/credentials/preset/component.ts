@@ -22,6 +22,8 @@ import {NodeProvider} from '@shared/model/NodeProviderConstants';
 import {BaseFormValidator} from '@shared/validators/base-form.validator';
 import _ from 'lodash';
 import {filter, map, switchMap, takeUntil, tap} from 'rxjs/operators';
+import {catchError} from 'rxjs/operators';
+import {of} from 'rxjs';
 
 export enum Controls {
   Preset = 'name',
@@ -91,10 +93,14 @@ export class KubeOnePresetsComponent extends BaseFormValidator implements OnInit
     });
 
     this._clusterSpecService.providerChanges
-      .pipe(tap(_ => this.reset()))
+      .pipe(tap(provider => {
+        console.log('[KubeOne Presets] Provider changed:', provider);
+        this.reset();
+      }))
       .pipe(
         filter(_ => {
           if (!this.isPresetSupported()) {
+            console.log('[KubeOne Presets] Preset not supported for this provider');
             this._enable(false, Controls.Preset);
             return false;
           }
@@ -102,16 +108,37 @@ export class KubeOnePresetsComponent extends BaseFormValidator implements OnInit
         })
       )
       .pipe(
-        switchMap(_ =>
-          this._presetsService.presets(this._projectService.selectedProjectID, this._clusterSpecService.provider)
-        )
+        switchMap(_ => {
+          console.log('[KubeOne Presets] Loading presets for provider:', this._clusterSpecService.provider);
+          return this._presetsService.presets(this._projectService.selectedProjectID, this._clusterSpecService.provider).pipe(
+            catchError(error => {
+              console.error('[KubeOne Presets] Error loading presets:', error);
+              return of({items: []} as any);
+            })
+          );
+        })
       )
-      .pipe(map(presetList => new SimplePresetList(...presetList.items.map(preset => preset.name))))
+      .pipe(map(presetList => {
+        console.log('[KubeOne Presets] Received presetList:', presetList);
+        console.log('[KubeOne Presets] presetList.items:', presetList.items, 'Type:', typeof presetList.items);
+        try {
+          const presetNames = (presetList?.items ?? []).map(preset => preset.name);
+          console.log('[KubeOne Presets] Mapped preset names:', presetNames);
+          const result = new SimplePresetList(...presetNames);
+          console.log('[KubeOne Presets] Created SimplePresetList:', result.names);
+          return result;
+        } catch (error) {
+          console.error('[KubeOne Presets] Error creating SimplePresetList:', error);
+          return new SimplePresetList();
+        }
+      }))
       .pipe(takeUntil(this._unsubscribe))
       .subscribe(presetList => {
+        console.log('[KubeOne Presets] Subscribe: presetList received');
         this.presetsLoaded = presetList.names ? !_.isEmpty(presetList.names) : false;
         this._state = this.presetsLoaded ? PresetsState.Ready : PresetsState.Empty;
         this.presetList = presetList;
+        console.log('[KubeOne Presets] State:', this._state, 'Loaded:', this.presetsLoaded);
         this._enable(this._state !== PresetsState.Empty, Controls.Preset);
       });
 

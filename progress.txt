@@ -1,0 +1,268 @@
+================================================================================
+KUBEVIRT PRESET SPREAD SYNTAX ERROR - FIX TRACKING
+================================================================================
+Date: January 21, 2026
+Issue: Spread syntax Symbol.iterator error in kubevirt credential selection
+Root Cause: presetList.items was undefined/null when spread operator used
+
+================================================================================
+🎯 ROOT CAUSE IDENTIFIED!
+================================================================================
+
+**ERROR LOCATION:** HTTP Headers processing in Angular's HttpClient
+**REQUEST:** GET /api/v2/projects/{projectId}/providers/kubevirt/subnets
+**FAILURE POINT:** _HttpHeaders.applyUpdate() - when setting Authorization header
+
+**Stack Trace:**
+  at _HttpHeaders.applyUpdate (module.mjs:235:14)
+  at module.mjs:203:48
+  at Array.forEach (<anonymous>)
+  at _HttpHeaders.init (module.mjs:203:25)
+  at _HttpHeaders.forEach (module.mjs:278:10)
+
+**Root Cause Analysis:**
+The spread syntax error occurs in Angular's HTTP module when processing headers.
+This happens when req.headers (HttpHeaders object) is being cloned/spread but
+contains non-iterable data, likely due to corrupted headers state or invalid
+Authorization token format.
+
+**Likely Causes:**
+1. req.headers.keys() returning non-iterable value
+2. Authorization token is malformed or undefined
+3. HttpHeaders internal state is corrupted
+4. Headers being set with spread on non-iterable object
+
+================================================================================
+CHANGES COMPLETED
+================================================================================
+
+[✓] COMPLETED - Fix #1: Initialize PresetList.items
+    File: modules/web/src/app/shared/entity/preset.ts (Line 27)
+    Changed: items: Preset[];
+    To: items: Preset[] = [];
+    Reason: Ensures items is always an array, never undefined
+
+[✓] COMPLETED - Fix #2: Add logging & error handling to preset/component.ts
+    File: modules/web/src/app/wizard/step/provider-settings/preset/component.ts
+    
+    Changes:
+    - Added import: import {of} from 'rxjs';
+    - Added import: import {catchError} from 'rxjs/operators';
+    - Added comprehensive console.log tracing for:
+      * Datacenter changes
+      * API response received
+      * presetList.items type and value
+      * Mapped preset names
+      * SimplePresetList creation
+      * State transitions
+    - Added error handling with catchError operator
+    - Added try-catch around spread operation
+    - Fallback to empty SimplePresetList on error
+    
+    Logs added:
+    [Presets] Datacenter changed, provider: [provider], datacenter: [dc]
+    [Presets] Received presetList: [object]
+    [Presets] presetList.items: [items], Type: [type]
+    [Presets] Attempting to spread items and map preset names...
+    [Presets] Mapped preset names: [array]
+    [Presets] Successfully created SimplePresetList: [names]
+    [Presets] Error creating SimplePresetList: [error]
+    [Presets] State: [state], Loaded: [boolean]
+
+[✓] COMPLETED - Fix #3: Add logging to external-cluster-credentials/preset
+    File: modules/web/src/app/shared/components/external-cluster-credentials/preset/component.ts
+    
+    Changes:
+    - Added import: import {of} from 'rxjs';
+    - Added catchError to imports
+    - Added provider change logging
+    - Added error handling for getPresets call
+    - Added comprehensive logging in map operator
+    - Added try-catch around spread operation
+    
+    Logs added:
+    [ExternalCluster Presets] Provider changed: [provider]
+    [ExternalCluster Presets] Received presetList: [object]
+    [ExternalCluster Presets] presetList.items: [items], Type: [type]
+    [ExternalCluster Presets] Mapped preset names: [array]
+    [ExternalCluster Presets] Created SimplePresetList: [names]
+    [ExternalCluster Presets] Error creating SimplePresetList: [error]
+    [ExternalCluster Presets] State: [state], Loaded: [boolean]
+
+[✓] COMPLETED - Fix #4: Add logging to kubeone-wizard/steps/credentials/preset
+    File: modules/web/src/app/kubeone-wizard/steps/credentials/preset/component.ts
+    
+    Changes:
+    - Added import: import {of} from 'rxjs';
+    - Added catchError to imports
+    - Added provider change logging
+    - Added error handling for presets call
+    - Added comprehensive logging in map operator
+    - Added try-catch around spread operation
+    
+    Logs added:
+    [KubeOne Presets] Provider changed: [provider]
+    [KubeOne Presets] Preset not supported for this provider
+    [KubeOne Presets] Loading presets for provider: [provider]
+    [KubeOne Presets] Error loading presets: [error]
+    [KubeOne Presets] Received presetList: [object]
+    [KubeOne Presets] presetList.items: [items], Type: [type]
+    [KubeOne Presets] Mapped preset names: [array]
+    [KubeOne Presets] Created SimplePresetList: [names]
+    [KubeOne Presets] Error creating SimplePresetList: [error]
+    [KubeOne Presets] Subscribe: presetList received
+    [KubeOne Presets] State: [state], Loaded: [boolean]
+
+================================================================================
+HOW TO USE THE LOGS FOR DEBUGGING
+================================================================================
+
+1. Open Browser Developer Tools (F12 or Cmd+Option+I)
+2. Go to Console tab
+3. Select kubevirt credential
+4. Look for logs starting with [Presets], [ExternalCluster Presets], or [KubeOne Presets]
+
+Key information to check:
+- "[...] Received presetList:" - Shows exact API response structure
+- "[...] presetList.items:" - Shows if items exists and its type
+- "[...] Error:" - Shows where the error occurs
+- "[...] State:" - Shows the final state after processing
+
+Expected flow:
+1. Datacenter/Provider change log
+2. API response received
+3. Items validation and mapping
+4. SimplePresetList creation
+5. State update (Ready, Loading, or Empty)
+
+If error occurs:
+- Error log will show which step failed
+- Try-catch fallback will create empty SimplePresetList
+- UI will show "No [Type] Presets available" message
+
+================================================================================
+FILES MODIFIED SUMMARY
+================================================================================
+
+1. modules/web/src/app/shared/entity/preset.ts
+   - Line 27: Initialize items: Preset[] = []
+
+2. modules/web/src/app/wizard/step/provider-settings/preset/component.ts
+   - Imports: Added 'of' and 'catchError'
+   - Lines 101-118: Added comprehensive logging and error handling
+
+3. modules/web/src/app/shared/components/external-cluster-credentials/preset/component.ts
+   - Imports: Added 'of' and 'catchError'
+   - Lines 87-120: Added comprehensive logging and error handling
+
+4. modules/web/src/app/kubeone-wizard/steps/credentials/preset/component.ts
+   - Imports: Added 'of' and 'catchError'
+   - Lines 93-130: Added comprehensive logging and error handling
+
+5. modules/web/src/app/node-data/basic/provider/kubevirt/machine-type-selector/component.ts
+   - Lines 166-210: Added comprehensive logging to _categorizeOptions() method
+   - Added try-catch error handling around categorization
+   - Added validation check in _categorizeByType() to ensure instances is an array
+   - Added detailed logging for kubermaticInstances and customInstances
+   
+   New logs added:
+   [MachineTypeSelector] _categorizeOptions called, instanceTypes: [object]
+   [MachineTypeSelector] instanceTypes type: [type]
+   [MachineTypeSelector] No instance types available
+   [MachineTypeSelector] kubermaticInstances: [array], IsArray: [boolean]
+   [MachineTypeSelector] customInstances: [array], IsArray: [boolean]
+   [MachineTypeSelector] _categorizeByType called for [category], instances: [array]
+   [MachineTypeSelector] ERROR: instances for [category] is not an array!
+   [MachineTypeSelector] Error during categorization: [error]
+   [MachineTypeSelector] Categorization complete. hasGpuTypes: [boolean]
+
+6. modules/web/src/app/node-data/basic/provider/kubevirt/component.ts
+   - Lines 508-540: Added logging and array validation to _instanceTypesObservable
+   - Lines 558-590: Added logging and array validation to _preferencesObservable
+   - Lines 282-372: Added comprehensive error handling in ngAfterViewInit subscriptions
+   - Added try-catch around spread operations in map functions
+   - Added Array.isArray() checks before mapping
+   - Wrapped all observable subscriptions with error handlers and logging
+   
+   New logs added:
+   [KubeVirt] Received instanceTypes: [object]
+   [KubeVirt] instancetypes: [object]
+   [KubeVirt] Processing category: [category] [array]
+   [KubeVirt] ERROR: instancetypes[category] is not an array!
+   [KubeVirt] Mapped [category] instances: [count]
+   [KubeVirt] Error mapping [category]: [error]
+   [KubeVirt] Received preferences: [object]
+   [KubeVirt] preferences object: [object]
+   [KubeVirt] Processing preference category: [category] [array]
+   [KubeVirt] ERROR: preferences[category] is not an array!
+   [KubeVirt] Mapped [category] preferences: [count]
+   [KubeVirt] Error mapping [category] preferences: [error]
+   [KubeVirt Component] ngAfterViewInit - subscribing to observables
+   [KubeVirt Component] _instanceTypesObservable next: [data]
+   🔴 ERROR in _setInstanceTypes: [error with stack]
+   🔴 ERROR in _instanceTypesObservable: [error with stack]
+
+7. modules/web/src/app/core/services/global-error-handler.ts (NEW FILE)
+   - Created Angular ErrorHandler service to catch all unhandled errors
+   - Specifically detects Symbol.iterator errors with comprehensive logging
+   - Logs full stack trace with call stack breakdown
+   - Identifies likely source (Preset, KubeVirt, MachineTypeSelector components)
+   - Provides context: URL, timestamp, user agent
+   - Shows error properties and additional debugging information
+   
+   Error logs:
+   🔴 SPREAD SYNTAX ERROR CAUGHT BY ANGULAR ERROR HANDLER
+   Error Type: [constructor name]
+   Error Message: [message]
+   📍 STACK TRACE: [full stack with line-by-line breakdown]
+   🔍 CONTEXT: URL, timestamp, user agent
+   📦 ERROR PROPERTIES: [all error object properties]
+   🎯 ATTEMPTING TO IDENTIFY SOURCE: [likely component and what to check]
+
+8. modules/web/src/app/module.ts
+   - Added GlobalErrorHandler as ErrorHandler provider
+   - Imported ErrorHandler from @angular/core
+   - Now catches ALL Angular errors including spread syntax errors
+
+9. modules/web/src/app/core/interceptors/error-notifications.ts
+   - Enhanced HTTP interceptor to log all HTTP errors for debugging
+   - Added specific Symbol.iterator error detection in HTTP responses
+   - Logs request URL, method, and full error details
+   - **SUCCESSFULLY CAUGHT THE ERROR** showing it happens in HTTP headers processing
+   
+   HTTP Error logs:
+   [ErrorInterceptor] HTTP Error caught: {url, method, status, error}
+   🔴 SYMBOL.ITERATOR ERROR IN HTTP INTERCEPTOR
+   Request URL: /api/v2/projects/{projectId}/providers/kubevirt/subnets
+   Request Method: GET
+   HTTP Error: TypeError at _HttpHeaders.applyUpdate
+
+10. modules/web/src/app/core/interceptors/auth.ts (ENHANCED)
+    - Added comprehensive logging to trace headers processing
+    - Logs request details, header types, and keys before setting Authorization
+    - Added try-catch around header.set() operation
+    - Will show exact state when spread syntax error occurs
+
+================================================================================
+NEXT STEPS
+================================================================================
+
+[✓] COMPLETED - Additional spread syntax safety in machine-type-selector
+    - Added Array.isArray() check before spreading sourceOptions (line 256)
+    - Added validation before spreading baseColumns and optionalColumns (line 273)
+    - Both with fallback to safe defaults if arrays are invalid
+    - Prevents Symbol.iterator errors in filter/display operations
+
+1. Build the project: npm run build
+2. Test kubevirt credential selection in the browser
+3. Open DevTools console and look for [Presets] logs
+4. Verify the exact structure of presetList response
+5. Check if presetList.items exists and what type it is
+6. If error still occurs, the logs will pinpoint the exact location
+
+Once logs are captured:
+- Share the console output showing the logs
+- This will reveal exactly what the API is returning
+- We can then implement final fix based on actual data structure
+
+================================================================================

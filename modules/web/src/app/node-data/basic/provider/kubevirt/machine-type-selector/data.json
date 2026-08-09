@@ -1,0 +1,148 @@
+{
+    "instancetypes": {
+        "custom": [
+            {
+                "name": "cx1.2xlarge",
+                "spec": "{\"cpu\":{\"guest\":8,\"dedicatedCPUPlacement\":true,\"numa\":{\"guestMappingPassthrough\":{}},\"isolateEmulatorThread\":true},\"memory\":{\"guest\":\"17180M\",\"hugepages\":{\"pageSize\":\"2Mi\"}},\"ioThreadsPolicy\":\"auto\"}"
+            },
+            {
+                "name": "cx1.4xlarge",
+                "spec": "{\"cpu\":{\"guest\":16,\"dedicatedCPUPlacement\":true,\"numa\":{\"guestMappingPassthrough\":{}},\"isolateEmulatorThread\":true},\"memory\":{\"guest\":\"34360M\",\"hugepages\":{\"pageSize\":\"2Mi\"}},\"ioThreadsPolicy\":\"auto\"}"
+            },
+            {
+                "name": "cx1.8xlarge",
+                "spec": "{\"cpu\":{\"guest\":32,\"dedicatedCPUPlacement\":true,\"numa\":{\"guestMappingPassthrough\":{}},\"isolateEmulatorThread\":true},\"memory\":{\"guest\":\"68720M\",\"hugepages\":{\"pageSize\":\"2Mi\"}},\"ioThreadsPolicy\":\"auto\"}"
+            },
+            {
+                "name": "cx1.large",
+                "spec": "{\"cpu\":{\"guest\":2,\"dedicatedCPUPlacement\":true,\"numa\":{\"guestMappingPassthrough\":{}},\"isolateEmulatorThread\":true},\"memory\":{\"guest\":\"4295M\",\"hugepages\":{\"pageSize\":\"2Mi\"}},\"ioThreadsPolicy\":\"auto\"}"
+            },
+            {
+                "name": "cx1.xlarge",
+                "spec": "{\"cpu\":{\"guest\":4,\"dedicatedCPUPlacement\":true,\"numa\":{\"guestMappingPassthrough\":{}},\"isolateEmulatorThread\":true},\"memory\":{\"guest\":\"8590M\",\"hugepages\":{\"pageSize\":\"2Mi\"}},\"ioThreadsPolicy\":\"auto\"}"
+            },
+            {
+                "name": "m1.2xlarge",
+                "spec": "{\"cpu\":{\"guest\":8},\"memory\":{\"guest\":\"68720M\",\"hugepages\":{\"pageSize\":\"2Mi\"}}}"
+            },
+            {
+                "name": "m1.4xlarge",
+                "spec": "{\"cpu\":{\"guest\":16},\"memory\":{\"guest\":\"137439M\",\"hugepages\":{\"pageSize\":\"2Mi\"}}}"
+            },
+            {
+                "name": "m1.8xlarge",
+                "spec": "{\"cpu\":{\"guest\":32},\"memory\":{\"guest\":\"274878M\",\"hugepages\":{\"pageSize\":\"2Mi\"}}}"
+            },
+            {
+                "name": "m1.large",
+                "spec": "{\"cpu\":{\"guest\":2},\"memory\":{\"guest\":\"17180M\",\"hugepages\":{\"pageSize\":\"2Mi\"}}}"
+            },
+            {
+                "name": "m1.xlarge",
+                "spec": "{\"cpu\":{\"guest\":4},\"memory\":{\"guest\":\"34360M\",\"hugepages\":{\"pageSize\":\"2Mi\"}}}"
+            },
+            {
+                "name": "n1.2xlarge",
+                "spec": "{\"cpu\":{\"guest\":16,\"dedicatedCPUPlacement\":true,\"isolateEmulatorThread\":true},\"memory\":{\"guest\":\"34360M\",\"hugepages\":{\"pageSize\":\"1Gi\"}}}"
+            },
+            {
+                "name": "n1.4xlarge",
+                "spec": "{\"cpu\":{\"guest\":32,\"dedicatedCPUPlacement\":true,\"isolateEmulatorThread\":true},\"memory\":{\"guest\":\"68720M\",\"hugepages\":{\"pageSize\":\"1Gi\"}}}"
+            },
+            {
+                "name": "n1.8xlarge",
+                "spec": "{\"cpu\":{\"guest\":64,\"dedicatedCPUPlacement\":true,\"isolateEmulatorThread\":true},\"memory\":{\"guest\":\"137439M\",\"hugepages\":{\"pageSize\":\"1Gi\"}}}"
+            },
+            {
+                "name": "n1.large",
+                "spec": "{\"cpu\":{\"guest\":4,\"dedicatedCPUPlacement\":true,\"isolateEmulatorThread\":true},\"memory\":{\"guest\":\"8590M\",\"hugepages\":{\"pageSize\":\"1Gi\"}}}"
+            },
+            {
+                "name": "n1.medium",
+                "spec": "{\"cpu\":{\"guest\":4,\"dedicatedCPUPlacement\":true,\"isolateEmulatorThread\":true},\"memory\":{\"guest\":\"4295M\",\"hugepages\":{\"pageSize\":\"1Gi\"}}}"
+            },
+            {
+                "name": "n1.xlarge",
+                "spec": "{\"cpu\":{\"guest\":8,\"dedicatedCPUPlacement\":true,\"isolateEmulatorThread\":true},\"memory\":{\"guest\":\"17180M\",\"hugepages\":{\"pageSize\":\"1Gi\"}}}"
+            },
+            {
+                "name": "o1.2xlarge",
+                "spec": "{\"cpu\":{\"guest\":8},\"memory\":{\"guest\":\"34360M\"}}"
+            },
+            {
+                "name": "o1.4xlarge",
+                "spec": "{\"cpu\":{\"guest\":16},\"memory\":{\"guest\":\"68720M\"}}"
+            },
+            {
+                "name": "o1.8xlarge",
+                "spec": "{\"cpu\":{\"guest\":32},\"memory\":{\"guest\":\"137439M\"}}"
+            },
+            {
+                "name": "o1.large",
+                "spec": "{\"cpu\":{\"guest\":2},\"memory\":{\"guest\":\"8590M\"}}"
+            },
+            {
+                "name": "o1.xlarge",
+                "spec": "{\"cpu\":{\"guest\":4},\"memory\":{\"guest\":\"17180M\"}}"
+            },
+            {
+                "name": "rt1.2xlarge",
+                "spec": "{\"cpu\":{\"guest\":8,\"dedicatedCPUPlacement\":true,\"numa\":{\"guestMappingPassthrough\":{}},\"isolateEmulatorThread\":true,\"realtime\":{}},\"memory\":{\"guest\":\"34360M\",\"hugepages\":{\"pageSize\":\"1Gi\"}}}"
+            },
+            {
+                "name": "rt1.4xlarge",
+                "spec": "{\"cpu\":{\"guest\":16,\"dedicatedCPUPlacement\":true,\"numa\":{\"guestMappingPassthrough\":{}},\"isolateEmulatorThread\":true,\"realtime\":{}},\"memory\":{\"guest\":\"68720M\",\"hugepages\":{\"pageSize\":\"1Gi\"}}}"
+            },
+            {
+                "name": "rt1.8xlarge",
+                "spec": "{\"cpu\":{\"guest\":32,\"dedicatedCPUPlacement\":true,\"numa\":{\"guestMappingPassthrough\":{}},\"isolateEmulatorThread\":true,\"realtime\":{}},\"memory\":{\"guest\":\"137439M\",\"hugepages\":{\"pageSize\":\"1Gi\"}}}"
+            },
+            {
+                "name": "rt1.large",
+                "spec": "{\"cpu\":{\"guest\":2,\"dedicatedCPUPlacement\":true,\"numa\":{\"guestMappingPassthrough\":{}},\"isolateEmulatorThread\":true,\"realtime\":{}},\"memory\":{\"guest\":\"8590M\",\"hugepages\":{\"pageSize\":\"1Gi\"}}}"
+            },
+            {
+                "name": "rt1.xlarge",
+                "spec": "{\"cpu\":{\"guest\":4,\"dedicatedCPUPlacement\":true,\"numa\":{\"guestMappingPassthrough\":{}},\"isolateEmulatorThread\":true,\"realtime\":{}},\"memory\":{\"guest\":\"17180M\",\"hugepages\":{\"pageSize\":\"1Gi\"}}}"
+            },
+            {
+                "name": "u1.2xlarge",
+                "spec": "{\"cpu\":{\"guest\":8},\"memory\":{\"guest\":\"34360M\"}}"
+            },
+            {
+                "name": "u1.2xmedium",
+                "spec": "{\"cpu\":{\"guest\":2},\"memory\":{\"guest\":\"4295M\"}}"
+            },
+            {
+                "name": "u1.4xlarge",
+                "spec": "{\"cpu\":{\"guest\":16},\"memory\":{\"guest\":\"68720M\"}}"
+            },
+            {
+                "name": "u1.8xlarge",
+                "spec": "{\"cpu\":{\"guest\":32},\"memory\":{\"guest\":\"137439M\"}}"
+            },
+            {
+                "name": "u1.large",
+                "spec": "{\"cpu\":{\"guest\":2},\"memory\":{\"guest\":\"8590M\"}}"
+            },
+            {
+                "name": "u1.xlarge",
+                "spec": "{\"cpu\":{\"guest\":4},\"memory\":{\"guest\":\"17180M\"}}"
+            }
+        ],
+        "kubermatic": [
+            {
+                "name": "standard-2",
+                "spec": "{\"cpu\":{\"guest\":2},\"memory\":{\"guest\":\"8590M\"}}"
+            },
+            {
+                "name": "standard-4",
+                "spec": "{\"cpu\":{\"guest\":4},\"memory\":{\"guest\":\"17180M\"}}"
+            },
+            {
+                "name": "standard-8",
+                "spec": "{\"cpu\":{\"guest\":8},\"memory\":{\"guest\":\"34360M\"}}"
+            }
+        ]
+    }
+}

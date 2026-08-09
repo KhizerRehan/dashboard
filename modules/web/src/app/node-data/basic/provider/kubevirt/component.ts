@@ -30,7 +30,7 @@ import {InstanceDetailsDialogComponent} from '@app/node-data/basic/provider/kube
 import {GlobalModule} from '@core/services/global/module';
 import {NodeDataService} from '@core/services/node-data/service';
 import {QuotaCalculationService} from '@dynamic/enterprise/quotas/services/quota-calculation';
-import {ComboboxControls, FilteredComboboxComponent} from '@shared/components/combobox/component';
+import {FilteredComboboxComponent} from '@shared/components/combobox/component';
 import {KubeVirtNodeAffinityPreset, KubeVirtNodeSpec, NodeCloudSpec, NodeSpec} from '@shared/entity/node';
 import {
   KubeVirtAffinityPreset,
@@ -141,7 +141,6 @@ export class KubeVirtBasicNodeDataComponent
   extends BaseFormValidator
   implements OnInit, OnDestroy, AfterViewChecked, AfterViewInit
 {
-  @ViewChild('instanceTypeCombobox') private _instanceTypeCombobox: FilteredComboboxComponent;
   @ViewChild('preferenceCombobox') private _preferenceCombobox: FilteredComboboxComponent;
   @ViewChild('storageClassCombobox') private _storageClassCombobox: FilteredComboboxComponent;
   @ViewChild('osImageCombobox') private _osImageCombobox: FilteredComboboxComponent;
@@ -154,12 +153,14 @@ export class KubeVirtBasicNodeDataComponent
   private readonly _initialData = _.cloneDeep(this._nodeDataService.nodeData.spec.cloud.kubevirt);
   private _quotaCalculationService: QuotaCalculationService;
   private _initialQuotaCalculationPayload: ResourceQuotaCalculationPayload;
-  private _instanceTypes: KubeVirtInstanceTypeList;
+  _instanceTypes: KubeVirtInstanceTypeList;
   private _preferences: KubeVirtPreferenceList;
   private _osImages: KubeVirtOSImageList;
   isEnterpriseEdition = DynamicModule.isEnterpriseEdition;
   selectedInstanceType: KubeVirtInstanceType;
+  selectedInstanceTypeId = '';
   instanceTypeLabel = InstanceTypeState.Empty;
+  isLoadingInstanceTypes = false;
   selectedPreference: KubeVirtPreference;
   preferenceLabel = PreferenceState.Empty;
   osImageDropdownOptions: OSImageDropdownOption[];
@@ -201,7 +202,7 @@ export class KubeVirtBasicNodeDataComponent
       [Controls.Memory]: this._builder.control(this._defaultMemory, Validators.required),
       [Controls.PrimaryDiskOSImage]: this._builder.control('', Validators.required),
       [Controls.PrimaryDiskStorageClassName]: this._builder.control('', Validators.required),
-      [Controls.PrimaryDiskSize]: this._builder.control('10G', Validators.required),
+      [Controls.PrimaryDiskSize]: this._builder.control('10', Validators.required),
       [Controls.NodeAffinityPreset]: this._builder.control(''),
       [Controls.NodeAffinityPresetKey]: this._builder.control('', Validators.required),
       [Controls.NodeAffinityPresetValues]: this._builder.control(''),
@@ -222,8 +223,9 @@ export class KubeVirtBasicNodeDataComponent
     this.form
       .get(Controls.InstanceType)
       .valueChanges.pipe(takeUntil(this._unsubscribe))
-      .pipe(map(value => value[ComboboxControls.Select]))
+      .pipe(map(value => value))
       .subscribe(value => {
+        console.log('[KubeVirt Component] InstanceType valueChanges triggered with value:', value);
         const preferenceControl = this.form.get(Controls.Preference);
         if (value && preferenceControl.disabled) {
           preferenceControl.enable();
@@ -279,21 +281,102 @@ export class KubeVirtBasicNodeDataComponent
   }
 
   ngAfterViewInit(): void {
-    this._instanceTypesObservable.pipe(takeUntil(this._unsubscribe)).subscribe(this._setInstanceTypes.bind(this));
-    this._preferencesObservable.pipe(takeUntil(this._unsubscribe)).subscribe(this._setPreferences.bind(this));
-    this._storageClassesObservable
-      .pipe(takeUntil(this._unsubscribe))
-      .subscribe(this._setDefaultStorageClass.bind(this));
-    this._osImagesObservable.pipe(takeUntil(this._unsubscribe)).subscribe(this._setOSImages.bind(this));
+    console.log('[KubeVirt Component] ngAfterViewInit - subscribing to observables');
+    
+    try {
+      this._instanceTypesObservable.pipe(takeUntil(this._unsubscribe)).subscribe({
+        next: (data) => {
+          console.log('[KubeVirt Component] _instanceTypesObservable next:', data);
+          try {
+            this._setInstanceTypes(data);
+          } catch (error) {
+            console.error('🔴 ERROR in _setInstanceTypes:', error);
+            console.error('Stack:', error?.stack);
+            throw error;
+          }
+        },
+        error: (error) => {
+          console.error('🔴 ERROR in _instanceTypesObservable:', error);
+          console.error('Stack:', error?.stack);
+        }
+      });
+    } catch (error) {
+      console.error('🔴 ERROR subscribing to _instanceTypesObservable:', error);
+      console.error('Stack:', error?.stack);
+    }
+    
+    try {
+      this._preferencesObservable.pipe(takeUntil(this._unsubscribe)).subscribe({
+        next: (data) => {
+          console.log('[KubeVirt Component] _preferencesObservable next:', data);
+          try {
+            this._setPreferences(data);
+          } catch (error) {
+            console.error('🔴 ERROR in _setPreferences:', error);
+            console.error('Stack:', error?.stack);
+            throw error;
+          }
+        },
+        error: (error) => {
+          console.error('🔴 ERROR in _preferencesObservable:', error);
+          console.error('Stack:', error?.stack);
+        }
+      });
+    } catch (error) {
+      console.error('🔴 ERROR subscribing to _preferencesObservable:', error);
+      console.error('Stack:', error?.stack);
+    }
+    
+    try {
+      this._storageClassesObservable
+        .pipe(takeUntil(this._unsubscribe))
+        .subscribe({
+          next: (data) => {
+            console.log('[KubeVirt Component] _storageClassesObservable next:', data);
+            try {
+              this._setDefaultStorageClass(data);
+            } catch (error) {
+              console.error('🔴 ERROR in _setDefaultStorageClass:', error);
+              console.error('Stack:', error?.stack);
+              throw error;
+            }
+          },
+          error: (error) => {
+            console.error('🔴 ERROR in _storageClassesObservable:', error);
+            console.error('Stack:', error?.stack);
+          }
+        });
+    } catch (error) {
+      console.error('🔴 ERROR subscribing to _storageClassesObservable:', error);
+      console.error('Stack:', error?.stack);
+    }
+    
+    try {
+      this._osImagesObservable.pipe(takeUntil(this._unsubscribe)).subscribe({
+        next: (data) => {
+          console.log('[KubeVirt Component] _osImagesObservable next:', data);
+          try {
+            this._setOSImages(data);
+          } catch (error) {
+            console.error('🔴 ERROR in _setOSImages:', error);
+            console.error('Stack:', error?.stack);
+            throw error;
+          }
+        },
+        error: (error) => {
+          console.error('🔴 ERROR in _osImagesObservable:', error);
+          console.error('Stack:', error?.stack);
+        }
+      });
+    } catch (error) {
+      console.error('🔴 ERROR subscribing to _osImagesObservable:', error);
+      console.error('Stack:', error?.stack);
+    }
   }
 
   ngOnDestroy(): void {
     this._unsubscribe.next();
     this._unsubscribe.complete();
-  }
-
-  get instanceTypeCategories(): string[] {
-    return Object.keys(this._instanceTypes?.instancetypes || {});
   }
 
   get preferenceCategories(): string[] {
@@ -306,18 +389,6 @@ export class KubeVirtBasicNodeDataComponent
 
   get isSubnetsRequired(): boolean {
     return !!this._clusterSpecService.cluster?.spec?.cloud?.kubevirt?.vpcName || this.subnets?.length > 0;
-  }
-
-  getInstanceTypeOptions(group: string): KubeVirtInstanceType[] {
-    return this._instanceTypes?.instancetypes?.[group] || [];
-  }
-
-  instanceTypeDisplayName(instanceTypeId: string): string {
-    if (instanceTypeId) {
-      // only display name of selected instance type
-      return instanceTypeId.substring(instanceTypeId.indexOf(this._instanceTypeIDSeparator) + 1);
-    }
-    return instanceTypeId;
   }
 
   getPreferenceOptions(group: string): KubeVirtPreference[] {
@@ -512,14 +583,29 @@ export class KubeVirtBasicNodeDataComponent
       .instanceTypes(this._clearInstanceType.bind(this), this._onInstanceTypeLoading.bind(this))
       .pipe(
         map(instanceTypes => {
+          console.log('[KubeVirt] Received instanceTypes:', instanceTypes);
           if (instanceTypes?.instancetypes) {
+            console.log('[KubeVirt] instancetypes:', instanceTypes.instancetypes);
             Object.keys(instanceTypes.instancetypes).forEach(category => {
-              instanceTypes.instancetypes[category] = instanceTypes.instancetypes[category].map(
-                (instanceType: KubeVirtInstanceType) => ({
-                  _id: `${category}${this._instanceTypeIDSeparator}${instanceType.name}`,
-                  ...instanceType,
-                })
-              );
+              console.log(`[KubeVirt] Processing category: ${category}`, instanceTypes.instancetypes[category]);
+              const categoryInstances = instanceTypes.instancetypes[category];
+              
+              if (!Array.isArray(categoryInstances)) {
+                console.error(`[KubeVirt] ERROR: instancetypes[${category}] is not an array!`, categoryInstances);
+                return;
+              }
+              
+              try {
+                instanceTypes.instancetypes[category] = categoryInstances.map(
+                  (instanceType: KubeVirtInstanceType) => ({
+                    _id: `${category}${this._instanceTypeIDSeparator}${instanceType.name}`,
+                    ...instanceType,
+                  })
+                );
+                console.log(`[KubeVirt] Mapped ${category} instances:`, instanceTypes.instancetypes[category].length);
+              } catch (error) {
+                console.error(`[KubeVirt] Error mapping ${category}:`, error);
+              }
             });
           }
           return instanceTypes;
@@ -530,20 +616,23 @@ export class KubeVirtBasicNodeDataComponent
   private _clearInstanceType(): void {
     this._instanceTypes = null;
     this.selectedInstanceType = null;
+    this.selectedInstanceTypeId = '';
     this.instanceTypeLabel = InstanceTypeState.Empty;
-    this._instanceTypeCombobox.reset();
     this._cdr.detectChanges();
   }
 
   private _onInstanceTypeLoading(): void {
+    this.isLoadingInstanceTypes = true;
     this.instanceTypeLabel = InstanceTypeState.Loading;
     this._cdr.detectChanges();
   }
 
   private _setInstanceTypes(instanceTypes: KubeVirtInstanceTypeList): void {
     this._instanceTypes = instanceTypes;
+    this.isLoadingInstanceTypes = false;
     if (this._initialData?.instancetype) {
       const instanceTypeId = this._getSelectedInstanceTypeId(this._initialData.instancetype);
+      this.selectedInstanceTypeId = instanceTypeId;
       this.onInstanceTypeChange(instanceTypeId);
     }
     this.instanceTypeLabel = Object.keys(this._instanceTypes?.instancetypes || {}).some(
@@ -559,14 +648,29 @@ export class KubeVirtBasicNodeDataComponent
       .preferences(this._clearPreference.bind(this), this._onPreferenceLoading.bind(this))
       .pipe(
         map(preferences => {
+          console.log('[KubeVirt] Received preferences:', preferences);
           if (preferences?.preferences) {
+            console.log('[KubeVirt] preferences object:', preferences.preferences);
             Object.keys(preferences.preferences).forEach(category => {
-              preferences.preferences[category] = preferences.preferences[category].map(
-                (preference: KubeVirtPreference) => ({
-                  _id: `${category}${this._instanceTypeIDSeparator}${preference.name}`,
-                  ...preference,
-                })
-              );
+              console.log(`[KubeVirt] Processing preference category: ${category}`, preferences.preferences[category]);
+              const categoryPreferences = preferences.preferences[category];
+              
+              if (!Array.isArray(categoryPreferences)) {
+                console.error(`[KubeVirt] ERROR: preferences[${category}] is not an array!`, categoryPreferences);
+                return;
+              }
+              
+              try {
+                preferences.preferences[category] = categoryPreferences.map(
+                  (preference: KubeVirtPreference) => ({
+                    _id: `${category}${this._instanceTypeIDSeparator}${preference.name}`,
+                    ...preference,
+                  })
+                );
+                console.log(`[KubeVirt] Mapped ${category} preferences:`, preferences.preferences[category].length);
+              } catch (error) {
+                console.error(`[KubeVirt] Error mapping ${category} preferences:`, error);
+              }
             });
           }
           return preferences;
@@ -637,6 +741,7 @@ export class KubeVirtBasicNodeDataComponent
           link: osVersions[version],
         }))
       : [];
+<<<<<<< Updated upstream
     // osImageLink will be set when onOSImageChange is called, since it fires before the form updates the new value.
     const selectedOSImage = osImageLink || this.form.get(Controls.PrimaryDiskOSImage).value?.[ComboboxControls?.Select];
     if (selectedOSImage) {
@@ -645,8 +750,11 @@ export class KubeVirtBasicNodeDataComponent
     } else {
       this._nodeDataService.kubeVirt.osImageVersion = '';
     }
+=======
+    const selectedOSImage = this.form.get(Controls.PrimaryDiskOSImage).value;
+>>>>>>> Stashed changes
     if (selectedOSImage && !this.osImageDropdownOptions.find(osImage => osImage.link === selectedOSImage)) {
-      this._osImageCombobox.reset();
+      this.form.get(Controls.PrimaryDiskOSImage).reset();
     }
   }
 
@@ -696,7 +804,7 @@ export class KubeVirtBasicNodeDataComponent
   private _init(): void {
     if (this._initialData) {
       this.form.get(Controls.Memory).setValue(parseInt(this._initialData.memory) || this._defaultMemory);
-      this.form.get(Controls.PrimaryDiskSize).setValue(this._initialData.primaryDiskSize);
+      this.form.get(Controls.PrimaryDiskSize).setValue(parseInt(this._initialData.primaryDiskSize) || 10);
       this.form.get(Controls.PrimaryDiskOSImage).setValue(this._initialData.primaryDiskOSImage);
       this.form.get(Controls.NodeAffinityPreset).setValue(this._initialData.nodeAffinityPreset?.Type);
       this.form.get(Controls.NodeAffinityPresetKey).setValue(this._initialData.nodeAffinityPreset?.Key);
@@ -729,7 +837,7 @@ export class KubeVirtBasicNodeDataComponent
   }
 
   private _getNodeData(): NodeData {
-    const instanceType = this.form.get(Controls.InstanceType).value[ComboboxControls.Select];
+    const instanceType = this.form.get(Controls.InstanceType).value;
     const cpus = this.form.get(Controls.CPUs).value;
     const memory = this.form.get(Controls.Memory).value;
     const nodeAffinityPreset = this.form.get(Controls.NodeAffinityPreset).value;
@@ -744,10 +852,8 @@ export class KubeVirtBasicNodeDataComponent
         cloud: {
           kubevirt: {
             cpus: !instanceType && cpus ? `${cpus}` : '',
-            memory: !instanceType && memory ? `${memory}M` : '',
-            primaryDiskStorageClassName: this.form.get(Controls.PrimaryDiskStorageClassName).value[
-              ComboboxControls.Select
-            ],
+            memory: !instanceType && memory ? `${memory}Mi` : '',
+            primaryDiskStorageClassName: this.form.get(Controls.PrimaryDiskStorageClassName).value,
             primaryDiskSize: `${this.form.get(Controls.PrimaryDiskSize).value}G`,
             nodeAffinityPreset: nodeAffinityPresetData,
           } as KubeVirtNodeSpec,
@@ -764,17 +870,30 @@ export class KubeVirtBasicNodeDataComponent
       } as KubeVirtNodeSize,
     };
 
-    const instanceTypeId = this.form.get(Controls.InstanceType).value[ComboboxControls.Select];
+    const instanceTypeId = this.form.get(Controls.InstanceType).value;
     const cpus = instanceTypeId ? this.selectedInstanceTypeCpus : this.form.get(Controls.CPUs).value;
     const memory = instanceTypeId ? this.selectedInstanceTypeMemory : this.form.get(Controls.Memory).value;
 
     if (!cpus || !memory) {
       return null;
     }
+    
+    // Extract numeric value from memory for quota calculation
+    // selectedInstanceTypeMemory may contain units like "8590M" - strip them
+    let memoryValue = memory;
+    if (instanceTypeId && typeof memory === 'string') {
+      const match = memory.match(/^(\d+)/);
+      memoryValue = match ? match[1] : memory;
+    }
+    
     payload.kubevirtNodeSize = {
       ...payload.kubevirtNodeSize,
       [Controls.CPUs]: `${cpus}`,
+<<<<<<< Updated upstream
       [Controls.Memory]: instanceTypeId ? memory.slice(0, -1) : `${memory}`,
+=======
+      [Controls.Memory]: `${memoryValue}`,
+>>>>>>> Stashed changes
     };
 
     if (

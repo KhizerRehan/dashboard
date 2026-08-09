@@ -17,7 +17,8 @@ import {FormBuilder, FormControl, NG_VALIDATORS, NG_VALUE_ACCESSOR, Validators} 
 import {SimplePresetList} from '@shared/entity/preset';
 import {BaseFormValidator} from '@shared/validators/base-form.validator';
 import _ from 'lodash';
-import {filter, map, switchMap, takeUntil, tap} from 'rxjs/operators';
+import {catchError, filter, map, switchMap, takeUntil, tap} from 'rxjs/operators';
+import {of} from 'rxjs';
 import {ExternalClusterService} from '@core/services/external-cluster';
 import {ExternalClusterProvider} from '@shared/entity/external-cluster';
 import {ProjectService} from '@core/services/project';
@@ -90,22 +91,43 @@ export class CredentialsPresetsComponent extends BaseFormValidator implements On
       .pipe(
         filter(provider => !!provider),
         tap(provider => {
+          console.log('[ExternalCluster Presets] Provider changed:', provider);
           if (provider !== this.selectedProvider) {
             this.selectedProvider = provider;
             this.reset();
           }
         }),
         switchMap(provider =>
-          this._externalClusterService.getPresets(this._projectService.selectedProjectID, provider)
+          this._externalClusterService.getPresets(this._projectService.selectedProjectID, provider).pipe(
+            catchError(error => {
+              console.error('[ExternalCluster Presets] Error loading presets:', error);
+              return of({items: []} as any);
+            })
+          )
         ),
-        map(presetList => new SimplePresetList(...presetList.items.map(preset => preset.name))),
+        map(presetList => {
+          console.log('[ExternalCluster Presets] Received presetList:', presetList);
+          console.log('[ExternalCluster Presets] presetList.items:', presetList.items, 'Type:', typeof presetList.items);
+          try {
+            const presetNames = (presetList?.items ?? []).map(preset => preset.name);
+            console.log('[ExternalCluster Presets] Mapped preset names:', presetNames);
+            const result = new SimplePresetList(...presetNames);
+            console.log('[ExternalCluster Presets] Created SimplePresetList:', result.names);
+            return result;
+          } catch (error) {
+            console.error('[ExternalCluster Presets] Error creating SimplePresetList:', error);
+            return new SimplePresetList();
+          }
+        }),
         takeUntil(this._unsubscribe)
       )
       .subscribe(presetList => {
+        console.log('[ExternalCluster Presets] Subscribing to preset list');
         this.reset();
         this.presetsLoaded = presetList.names ? !_.isEmpty(presetList.names) : false;
         this._state = this.presetsLoaded ? PresetsState.Ready : PresetsState.Empty;
         this.presetList = presetList;
+        console.log('[ExternalCluster Presets] State:', this._state, 'Loaded:', this.presetsLoaded);
         this._enable(this._state !== PresetsState.Empty, Controls.Preset);
       });
 

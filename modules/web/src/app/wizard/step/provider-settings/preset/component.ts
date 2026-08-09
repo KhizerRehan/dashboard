@@ -21,7 +21,8 @@ import {Cluster} from '@shared/entity/cluster';
 import {Preset, SimplePresetList} from '@shared/entity/preset';
 import {BaseFormValidator} from '@shared/validators/base-form.validator';
 import _ from 'lodash';
-import {switchMap, takeUntil} from 'rxjs/operators';
+import {catchError, switchMap, takeUntil} from 'rxjs/operators';
+import {of} from 'rxjs';
 
 export enum Controls {
   Preset = 'name',
@@ -97,23 +98,41 @@ export class PresetsComponent extends BaseFormValidator implements OnInit, OnDes
 
     this._clusterSpecService.datacenterChanges
       .pipe(
-        switchMap(dc =>
-          this._presets.presets(
+        switchMap(dc => {
+          console.log('[Presets] Datacenter changed, provider:', this._clusterSpecService.provider, 'datacenter:', dc);
+          return this._presets.presets(
             false,
             false,
             this._clusterSpecService.provider,
             dc,
             this._projectService.selectedProjectID
-          )
-        )
+          ).pipe(
+            catchError(error => {
+              console.error('[Presets] Error loading presets:', error);
+              return of({items: []} as any);
+            })
+          );
+        })
       )
       .pipe(takeUntil(this._unsubscribe))
       .subscribe(presetList => {
+        console.log('[Presets] Received presetList:', presetList);
+        console.log('[Presets] presetList.items:', presetList.items, 'Type:', typeof presetList.items);
         this.reset();
         this.presetDetailedList = presetList.items;
-        this.presetList = new SimplePresetList(...presetList.items.map(preset => preset.name));
+        try {
+          console.log('[Presets] Attempting to spread items and map preset names...');
+          const presetNames = (presetList?.items ?? []).map(preset => preset.name);
+          console.log('[Presets] Mapped preset names:', presetNames);
+          this.presetList = new SimplePresetList(...presetNames);
+          console.log('[Presets] Successfully created SimplePresetList:', this.presetList.names);
+        } catch (error) {
+          console.error('[Presets] Error creating SimplePresetList:', error);
+          this.presetList = new SimplePresetList();
+        }
         this.presetsLoaded = this.presetList.names ? !_.isEmpty(this.presetList.names) : false;
         this._state = this.presetsLoaded ? PresetsState.Ready : PresetsState.Empty;
+        console.log('[Presets] State:', this._state, 'Loaded:', this.presetsLoaded);
         this._enable(this._state !== PresetsState.Empty, Controls.Preset);
       });
 

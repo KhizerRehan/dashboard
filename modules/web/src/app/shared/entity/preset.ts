@@ -25,7 +25,7 @@ export class SimplePresetList {
 }
 
 export class PresetList {
-  items: Preset[];
+  items: Preset[] = [];
 }
 
 export class PresetStat {
