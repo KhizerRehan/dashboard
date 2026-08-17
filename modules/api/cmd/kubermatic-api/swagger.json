@@ -27966,6 +27966,57 @@
       },
       "x-go-package": "k8c.io/dashboard/v2/pkg/api/v1"
     },
+    "AcceleratorAccountingBlocker": {
+      "type": "object",
+      "properties": {
+        "clusterName": {
+          "description": "ClusterName identifies the affected user cluster when the blocker is cluster-specific.",
+          "type": "string",
+          "x-go-name": "ClusterName"
+        },
+        "count": {
+          "description": "Count is the number of affected objects when the blocker represents an aggregate.",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "Count"
+        },
+        "message": {
+          "description": "Message contains human-readable details about the blocker.",
+          "type": "string",
+          "x-go-name": "Message"
+        },
+        "seedName": {
+          "description": "SeedName identifies the affected seed when the blocker is seed-specific.",
+          "type": "string",
+          "x-go-name": "SeedName"
+        },
+        "type": {
+          "description": "Type identifies the class of blocker.",
+          "type": "string",
+          "x-go-name": "Type"
+        }
+      },
+      "x-go-package": "k8c.io/dashboard/v2/pkg/api/v2"
+    },
+    "AcceleratorQuota": {
+      "type": "object",
+      "properties": {
+        "provider": {
+          "description": "Provider is the KKP infrastructure provider identifier.",
+          "type": "string",
+          "x-go-name": "Provider"
+        },
+        "resources": {
+          "description": "Resources maps provider-native accelerator resource names to Kubernetes quantities.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Resources"
+        }
+      },
+      "x-go-package": "k8c.io/dashboard/v2/pkg/api/v2"
+    },
     "AccessibleAddons": {
       "type": "array",
       "title": "AccessibleAddons represents an array of addons that can be configured in the user clusters.",
@@ -28168,6 +28219,11 @@
           "description": "Email address of the admin user",
           "type": "string",
           "x-go-name": "Email"
+        },
+        "grantedByGroup": {
+          "description": "GrantedByGroup is the OIDC group that granted this user admin via the\nadmin-group controller. Empty for manually-managed admins. Read-only.",
+          "type": "string",
+          "x-go-name": "GrantedByGroup"
         },
         "isAdmin": {
           "description": "IsAdmin indicates admin role",
@@ -35080,6 +35136,14 @@
       "description": "GlobalSettings defines global settings",
       "type": "object",
       "properties": {
+        "adminGroups": {
+          "description": "AdminGroups is the list of OIDC group names whose members are automatically\ngranted KKP administrator privileges.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "AdminGroups"
+        },
         "allowedOperatingSystems": {
           "description": "AllowedOperatingSystems shows the available operating systems to use in the machine deployment.",
           "type": "object",
@@ -35521,7 +35585,7 @@
       "type": "object",
       "properties": {
         "cidr": {
-          "description": "cidr is a string representing the IPBlock\nValid examples are \"192.168.1.0/24\" or \"2001:db8::/64\"",
+          "description": "cidr is a string representing the IPBlock\nValid examples are \"192.168.1.0/24\" or \"2001:db8::/64\"\n+required\n+k8s:alpha(since: \"1.36\")=+k8s:required",
           "type": "string",
           "x-go-name": "CIDR"
         },
@@ -36600,9 +36664,17 @@
           "x-go-name": "Kubeconfig"
         },
         "subnetName": {
-          "description": "SubnetName is the name of a subnet that is smaller, segmented portion of a larger network, like a Virtual Private Cloud (VPC).",
+          "description": "SubnetName is the name of a subnet that is smaller, segmented portion of a larger network, like a Virtual Private Cloud (VPC).\n\nDeprecated: use Subnets instead.",
           "type": "string",
           "x-go-name": "SubnetName"
+        },
+        "subnets": {
+          "description": "Subnets is a list of subnet names, smaller segmented portions of a larger network, like a Virtual Private Cloud (VPC).",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Subnets"
         },
         "vpcName": {
           "description": "VPCName  is a virtual network name dedicated to a single tenant within a KubeVirt",
@@ -37648,7 +37720,7 @@
           "x-go-name": "Ports"
         },
         "to": {
-          "description": "to is a list of destinations for outgoing traffic of pods selected for this rule.\nItems in this list are combined using a logical OR operation. If this field is\nempty or missing, this rule matches all destinations (traffic not restricted by\ndestination). If this field is present and contains at least one item, this rule\nallows traffic only if the traffic matches at least one item in the to list.\n+optional\n+listType=atomic",
+          "description": "to is a list of destinations for outgoing traffic of pods selected for this rule.\nItems in this list are combined using a logical OR operation. If this field is\nempty or missing, this rule matches all destinations (traffic not restricted by\ndestination). If this field is present and contains at least one item, this rule\nallows traffic only if the traffic matches at least one item in the to list.\n+optional\n+listType=atomic\n+k8s:alpha(since: \"1.36\")=+k8s:optional",
           "type": "array",
           "items": {
             "$ref": "#/definitions/NetworkPolicyPeer"
@@ -37663,7 +37735,7 @@
       "type": "object",
       "properties": {
         "from": {
-          "description": "from is a list of sources which should be able to access the pods selected for this rule.\nItems in this list are combined using a logical OR operation. If this field is\nempty or missing, this rule matches all sources (traffic not restricted by\nsource). If this field is present and contains at least one item, this rule\nallows traffic only if the traffic matches at least one item in the from list.\n+optional\n+listType=atomic",
+          "description": "from is a list of sources which should be able to access the pods selected for this rule.\nItems in this list are combined using a logical OR operation. If this field is\nempty or missing, this rule matches all sources (traffic not restricted by\nsource). If this field is present and contains at least one item, this rule\nallows traffic only if the traffic matches at least one item in the from list.\n+optional\n+listType=atomic\n+k8s:alpha(since: \"1.36\")=+k8s:optional",
           "type": "array",
           "items": {
             "$ref": "#/definitions/NetworkPolicyPeer"
@@ -37726,7 +37798,7 @@
       "type": "object",
       "properties": {
         "egress": {
-          "description": "egress is a list of egress rules to be applied to the selected pods. Outgoing traffic\nis allowed if there are no NetworkPolicies selecting the pod (and cluster policy\notherwise allows the traffic), OR if the traffic matches at least one egress rule\nacross all of the NetworkPolicy objects whose podSelector matches the pod. If\nthis field is empty then this NetworkPolicy limits all outgoing traffic (and serves\nsolely to ensure that the pods it selects are isolated by default).\nThis field is beta-level in 1.8\n+optional\n+listType=atomic",
+          "description": "egress is a list of egress rules to be applied to the selected pods. Outgoing traffic\nis allowed if there are no NetworkPolicies selecting the pod (and cluster policy\notherwise allows the traffic), OR if the traffic matches at least one egress rule\nacross all of the NetworkPolicy objects whose podSelector matches the pod. If\nthis field is empty then this NetworkPolicy limits all outgoing traffic (and serves\nsolely to ensure that the pods it selects are isolated by default).\nThis field is beta-level in 1.8\n+optional\n+listType=atomic\n+k8s:alpha(since: \"1.36\")=+k8s:optional",
           "type": "array",
           "items": {
             "$ref": "#/definitions/NetworkPolicyEgressRule"
@@ -37734,7 +37806,7 @@
           "x-go-name": "Egress"
         },
         "ingress": {
-          "description": "ingress is a list of ingress rules to be applied to the selected pods.\nTraffic is allowed to a pod if there are no NetworkPolicies selecting the pod\n(and cluster policy otherwise allows the traffic), OR if the traffic source is\nthe pod's local node, OR if the traffic matches at least one ingress rule\nacross all of the NetworkPolicy objects whose podSelector matches the pod. If\nthis field is empty then this NetworkPolicy does not allow any traffic (and serves\nsolely to ensure that the pods it selects are isolated by default)\n+optional\n+listType=atomic",
+          "description": "ingress is a list of ingress rules to be applied to the selected pods.\nTraffic is allowed to a pod if there are no NetworkPolicies selecting the pod\n(and cluster policy otherwise allows the traffic), OR if the traffic source is\nthe pod's local node, OR if the traffic matches at least one ingress rule\nacross all of the NetworkPolicy objects whose podSelector matches the pod. If\nthis field is empty then this NetworkPolicy does not allow any traffic (and serves\nsolely to ensure that the pods it selects are isolated by default)\n+optional\n+listType=atomic\n+k8s:alpha(since: \"1.36\")=+k8s:optional",
           "type": "array",
           "items": {
             "$ref": "#/definitions/NetworkPolicyIngressRule"
@@ -39749,7 +39821,7 @@
           "x-go-name": "Resources"
         },
         "verbs": {
-          "description": "Verbs is a list of Verbs that apply to ALL the ResourceKinds contained in this rule. '*' represents all verbs.\n+listType=atomic",
+          "description": "Verbs is a list of Verbs that apply to ALL the ResourceKinds contained in this rule. '*' represents all verbs.\n+listType=atomic\n+required\n+k8s:alpha(since: \"1.36\")=+k8s:required",
           "type": "array",
           "items": {
             "type": "string"
@@ -40604,6 +40676,14 @@
     "Quota": {
       "type": "object",
       "properties": {
+        "accelerators": {
+          "description": "Accelerators contains provider-specific accelerator resource limits.\nA nil value means the field was omitted; an empty slice explicitly clears all limits.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AcceleratorQuota"
+          },
+          "x-go-name": "Accelerators"
+        },
         "cpu": {
           "description": "CPU holds the quantity of CPU.",
           "type": "integer",
@@ -40806,9 +40886,64 @@
       },
       "x-go-package": "k8c.io/dashboard/v2/pkg/api/v2"
     },
+    "ResourceQuotaGlobalAcceleratorAccountingStatus": {
+      "type": "object",
+      "properties": {
+        "activationPhase": {
+          "description": "ActivationPhase describes the current project-wide accelerator accounting state.",
+          "type": "string",
+          "x-go-name": "ActivationPhase"
+        },
+        "blockers": {
+          "description": "Blockers contains actionable reasons why project-wide accounting is not ready.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AcceleratorAccountingBlocker"
+          },
+          "x-go-name": "Blockers"
+        },
+        "legacyMachinesWithoutFootprint": {
+          "description": "LegacyMachinesWithoutFootprint is the project-wide number of machines without a trusted footprint.",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "LegacyMachinesWithoutFootprint"
+        },
+        "machinesWithInvalidFootprint": {
+          "description": "MachinesWithInvalidFootprint is the project-wide number of machines whose footprint cannot be accounted.",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "MachinesWithInvalidFootprint"
+        },
+        "observedAccountingRevision": {
+          "description": "ObservedAccountingRevision is the authoritative accounting revision.",
+          "type": "string",
+          "x-go-name": "ObservedAccountingRevision"
+        },
+        "observedAt": {
+          "description": "ObservedAt is the oldest heartbeat among the seed attestations included in this state.",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "ObservedAt"
+        },
+        "observedQuotaDigest": {
+          "description": "ObservedQuotaDigest is the authoritative digest of the current accelerator quota.",
+          "type": "string",
+          "x-go-name": "ObservedQuotaDigest"
+        },
+        "ready": {
+          "description": "Ready indicates that all required seed attestations are compatible and fresh.",
+          "type": "boolean",
+          "x-go-name": "Ready"
+        }
+      },
+      "x-go-package": "k8c.io/dashboard/v2/pkg/api/v2"
+    },
     "ResourceQuotaStatus": {
       "type": "object",
       "properties": {
+        "globalAcceleratorAccounting": {
+          "$ref": "#/definitions/ResourceQuotaGlobalAcceleratorAccountingStatus"
+        },
         "globalUsage": {
           "$ref": "#/definitions/Quota"
         },
@@ -41588,12 +41723,12 @@
           "x-go-name": "APIGroup"
         },
         "kind": {
-          "description": "Kind of object being referenced. Values defined by this API group are \"User\", \"Group\", and \"ServiceAccount\".\nIf the Authorizer does not recognized the kind value, the Authorizer should report an error.",
+          "description": "Kind of object being referenced. Values defined by this API group are \"User\", \"Group\", and \"ServiceAccount\".\nIf the Authorizer does not recognized the kind value, the Authorizer should report an error.\n+required",
           "type": "string",
           "x-go-name": "Kind"
         },
         "name": {
-          "description": "Name of the object being referenced.\n+required\n+k8s:required",
+          "description": "Name of the object being referenced.\n+required\n+k8s:alpha(since: \"1.36\")=+k8s:required",
           "type": "string",
           "x-go-name": "Name"
         },

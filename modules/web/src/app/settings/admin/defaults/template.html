@@ -337,6 +337,7 @@ limitations under the License.
           <km-spinner-with-confirmation [isSaved]="isEqual(settings.enableShareCluster, apiSettings.enableShareCluster)" />
         </div>
 
+        @if (isEnterpriseEdition) {
         <div fxLayout="row">
           <div fxFlex="16%"
                fxLayoutAlign=" center"
@@ -394,6 +395,7 @@ limitations under the License.
           </mat-form-field>
           <km-spinner-with-confirmation [isSaved]="isEqual(settings.clusterBackupOptions?.defaultChecksumAlgorithm, apiSettings.clusterBackupOptions?.defaultChecksumAlgorithm)" />
         </div>
+        }
         }
 
         <div fxLayout="row">
@@ -525,6 +527,25 @@ limitations under the License.
                           (onChange)="onProtectedAnnotationsChange($event)"
                           description="Use comma, space or enter key as the separator. presetName is an internal KKP protected annotation and cannot be deleted."
                           fxFlex />
+          </div>
+        </div>
+        <div fxLayout="row"
+             fxLayoutAlign=" center">
+          <div fxFlex="16%"
+               fxLayoutAlign=" center"
+               class="entry-label">
+            <span>Admin Groups</span>
+            <div class="km-icon-info km-pointer"
+                 matTooltip="Members of these OIDC groups are automatically granted administrator privileges when they log in. Matching is exact and case-sensitive. Removing a group here demotes only the users whose admin rights were granted through it."></div>
+          </div>
+          <div fxFlex
+               fxLayout="row"
+               fxLayoutGap="10px">
+            <km-chip-list label="Admin Groups"
+                          [tags]="adminGroups"
+                          (onChange)="onAdminGroupsChange($event)"
+                          description="OIDC group names whose members become KKP administrators. Use comma, space or enter key as the separator."
+                          fxFlex="50%" />
           </div>
         </div>
         <div fxLayout="row"

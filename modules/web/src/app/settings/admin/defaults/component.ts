@@ -16,6 +16,7 @@ import {ChangeDetectorRef, Component, OnDestroy, OnInit} from '@angular/core';
 import {FormControl} from '@angular/forms';
 import {FeatureGateService} from '@app/core/services/feature-gate';
 import {UserClusterConfigService} from '@app/core/services/user-cluster-config';
+import {DynamicModule} from '@app/dynamic/module-registry';
 import {
   EventRateLimitConfig,
   EventRateLimitConfigItem,
@@ -69,6 +70,7 @@ export class DefaultsComponent implements OnInit, OnDestroy {
   isEventRateLimitUpdating = false;
   eventRateConfigActions = EventRateConfigActions;
 
+  readonly isEnterpriseEdition = DynamicModule.isEnterpriseEdition;
   readonly OperatingSystem = OperatingSystem;
   readonly ipAllocationModes = [VMwareCloudDirectorIPAllocationMode.POOL, VMwareCloudDirectorIPAllocationMode.DHCP];
   readonly veleroChecksumAlgorithms = Object.values(VeleroChecksumAlgorithm);
@@ -95,6 +97,10 @@ export class DefaultsComponent implements OnInit, OnDestroy {
 
   get protectedAnnotations(): string[] {
     return this.settings.annotations?.protectedAnnotations;
+  }
+
+  get adminGroups(): string[] {
+    return this.settings?.adminGroups;
   }
 
   ngOnInit(): void {
@@ -211,6 +217,11 @@ export class DefaultsComponent implements OnInit, OnDestroy {
 
   onProtectedAnnotationsChange(val: string[]): void {
     this.settings.annotations = {...(this.settings.annotations || {}), protectedAnnotations: val};
+    this.onSettingsChange();
+  }
+
+  onAdminGroupsChange(val: string[]): void {
+    this.settings.adminGroups = val;
     this.onSettingsChange();
   }
 
@@ -366,6 +377,11 @@ export class DefaultsComponent implements OnInit, OnDestroy {
     // objectDiff recurses into arrays and can produce a partial/sparse array, so send the full list.
     if (patch.disabledAuditWebhookBackendDCs) {
       patch.disabledAuditWebhookBackendDCs = this.settings.disabledAuditWebhookBackendDCs;
+    }
+
+    // Send full adminGroups array to avoid merge-patch issues with removals.
+    if (patch.adminGroups) {
+      patch.adminGroups = this.settings.adminGroups;
     }
 
     return patch;
