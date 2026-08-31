@@ -293,11 +293,6 @@ func filterMachineFlavorsForAWS(instances apiv1.AWSSizeList, filter kubermaticv1
 	for _, r := range instances {
 		keep := true
 
-		// Filter too expensive instance types (>1$ per hour) if GPU not enabled
-		if !filter.EnableGPU && r.Price > 1 {
-			continue
-		}
-
 		if !handlercommon.FilterGPU(r.GPUs, filter.EnableGPU) {
 			keep = false
 		}
