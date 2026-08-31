@@ -82,14 +82,18 @@ limitations under the License.
     <mat-hint>DatastoreCluster to be used for storing virtual machines. It is mutually exclusive with Datastore field.</mat-hint>
   </mat-form-field>
 
-  <mat-form-field fxFlex>
-    <mat-label>Resource Pool</mat-label>
-    <input matInput
-           [formControlName]="Controls.ResourcePool"
-           [name]="Controls.ResourcePool"
-           type="text"
-           autocomplete="off" />
-  </mat-form-field>
+  <km-combobox #resourcePoolCombobox
+               [grouped]="false"
+               [isDisabled]="isPresetSelected"
+               [options]="resourcePools"
+               [formControlName]="Controls.ResourcePool"
+               [hint]="getHint(Controls.ResourcePool)"
+               (changed)="onResourcePoolChange($event)"
+               [label]="resourcePoolLabel"
+               inputLabel="Select resource pool..."
+               filterBy="path">
+    <div *option="let resourcePool">{{resourcePool.path}}</div>
+  </km-combobox>
 
   <mat-card-header class="km-no-padding">
     <mat-card-title>Cluster Tags

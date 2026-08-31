@@ -860,6 +860,15 @@ type VSphereDatastoreList struct {
 	Datastores []string `json:"datastores"`
 }
 
+// VSphereResourcePool is the object representing a vsphere resource pool.
+// swagger:model VSphereResourcePool
+type VSphereResourcePool struct {
+	// Name is the name of the resource pool
+	Name string `json:"name"`
+	// Path is the inventory path of the resource pool
+	Path string `json:"path"`
+}
+
 // VSphereVMGroup is the object representing a vsphere VM Group.
 // swagger:model VSphereVMGroup
 type VSphereVMGroup struct {

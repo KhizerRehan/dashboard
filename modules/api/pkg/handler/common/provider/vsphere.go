@@ -57,6 +57,18 @@ func VsphereFoldersWithClusterCredentialsEndpoint(ctx context.Context, userInfoG
 	return GetVsphereFolders(ctx, userInfo, seedsGetter, username, password, datacenterName, caBundle)
 }
 
+func VsphereResourcePoolsWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter,
+	projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
+	seedsGetter provider.SeedsGetter, projectID, clusterID string, caBundle *x509.CertPool,
+) (interface{}, error) {
+	username, password, datacenterName, userInfo, err := getVsphereCredentialsAndDatacenterInfoFromCluster(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, seedsGetter, projectID, clusterID)
+	if err != nil {
+		return nil, err
+	}
+
+	return GetVsphereResourcePoolList(ctx, userInfo, seedsGetter, username, password, datacenterName, caBundle)
+}
+
 func VsphereVMGroupsWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter,
 	projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
 	seedsGetter provider.SeedsGetter, projectID, clusterID string, caBundle *x509.CertPool,
@@ -202,6 +214,29 @@ func GetVsphereDatastoreList(ctx context.Context, userInfo *provider.UserInfo, s
 	}
 
 	return apiDatastores, nil
+}
+
+func GetVsphereResourcePoolList(ctx context.Context, userInfo *provider.UserInfo, seedsGetter provider.SeedsGetter, username, password,
+	datacenterName string, caBundle *x509.CertPool) ([]apiv1.VSphereResourcePool, error) {
+	_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, datacenterName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find Datacenter %q: %w", datacenterName, err)
+	}
+
+	resourcePools, err := vsphere.GetResourcePoolList(ctx, datacenter.Spec.VSphere, username, password, caBundle)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get resource pool list: %w", err)
+	}
+
+	apiResourcePools := []apiv1.VSphereResourcePool{}
+	for _, resourcePool := range resourcePools {
+		apiResourcePools = append(apiResourcePools, apiv1.VSphereResourcePool{
+			Name: resourcePool.Name(),
+			Path: resourcePool.InventoryPath,
+		})
+	}
+
+	return apiResourcePools, nil
 }
 
 func GetVsphereVMGroupsList(ctx context.Context, userInfo *provider.UserInfo, seedsGetter provider.SeedsGetter, username, password,

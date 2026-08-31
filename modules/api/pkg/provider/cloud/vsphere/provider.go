@@ -270,6 +270,27 @@ func GetDatastoreList(ctx context.Context, dc *kubermaticv1.DatacenterSpecVSpher
 	return datastoreList, nil
 }
 
+// GetResourcePoolList returns a slice of ResourcePool of the datacenter from the passed cloudspec.
+func GetResourcePoolList(ctx context.Context, dc *kubermaticv1.DatacenterSpecVSphere, username, password string, caBundle *x509.CertPool) ([]*object.ResourcePool, error) {
+	session, err := newSession(ctx, dc, username, password, caBundle)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create vCenter session: %w", err)
+	}
+	defer session.Logout(ctx)
+
+	resourcePools, err := session.Finder.ResourcePoolList(ctx, "*")
+	if err != nil {
+		// A datacenter without any resource pool besides the implicit ones is a valid setup.
+		var notFoundErr *find.NotFoundError
+		if errors.As(err, &notFoundErr) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("couldn't retrieve resource pool list: %w", err)
+	}
+
+	return resourcePools, nil
+}
+
 // GetVMGroupsList returns a slice of Datastore of the datacenter from the passed cloudspec.
 func GetVMGroupsList(ctx context.Context, dc *kubermaticv1.DatacenterSpecVSphere, username, password string, caBundle *x509.CertPool) ([]VMGroup, error) {
 	session, err := newSession(ctx, dc, username, password, caBundle)

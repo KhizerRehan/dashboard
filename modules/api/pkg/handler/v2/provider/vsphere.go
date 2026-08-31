@@ -55,6 +55,16 @@ func VsphereFoldersWithClusterCredentialsEndpoint(projectProvider provider.Proje
 	}
 }
 
+func VsphereResourcePoolsWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter,
+	userInfoGetter provider.UserInfoGetter, caBundle *x509.CertPool) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(vSphereNoCredentialsReq)
+		return providercommon.VsphereResourcePoolsWithClusterCredentialsEndpoint(ctx, userInfoGetter, projectProvider,
+			privilegedProjectProvider, seedsGetter, req.ProjectID, req.ClusterID, caBundle)
+	}
+}
+
 func VsphereVMGroupsWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider,
 	privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter,
 	userInfoGetter provider.UserInfoGetter, caBundle *x509.CertPool) endpoint.Endpoint {
@@ -179,6 +189,37 @@ func VsphereVMGroupEndpoint(seedsGetter provider.SeedsGetter, presetProvider pro
 		}
 
 		return providercommon.GetVsphereVMGroupsList(ctx, userInfo, seedsGetter, username, password, req.DatacenterName, caBundle)
+	}
+}
+
+func VsphereResourcePoolEndpoint(seedsGetter provider.SeedsGetter, presetProvider provider.PresetProvider,
+	userInfoGetter provider.UserInfoGetter, caBundle *x509.CertPool) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(vSphereProjectReq)
+		if !ok {
+			return nil, utilerrors.NewBadRequest("invalid request")
+		}
+
+		userInfo, err := userInfoGetter(ctx, req.GetProjectID())
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		username := req.Username
+		password := req.Password
+
+		if len(req.Credential) > 0 {
+			preset, err := presetProvider.GetPreset(ctx, userInfo, ptr.To(req.GetProjectID()), req.Credential)
+			if err != nil {
+				return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+			}
+			if credentials := preset.Spec.VSphere; credentials != nil {
+				username = credentials.Username
+				password = credentials.Password
+			}
+		}
+
+		return providercommon.GetVsphereResourcePoolList(ctx, userInfo, seedsGetter, username, password, req.DatacenterName, caBundle)
 	}
 }
 

@@ -28,7 +28,12 @@ import {ClusterSpecService} from '@core/services/cluster-spec';
 import {PresetsService} from '@core/services/wizard/presets';
 import {FilteredComboboxComponent} from '@shared/components/combobox/component';
 import {CloudSpec, Cluster, ClusterSpec, VSphereCloudSpec, VSphereTags} from '@shared/entity/cluster';
-import {VSphereFolder, VSphereNetwork, VSphereTagCategory} from '@shared/entity/provider/vsphere';
+import {
+  VSphereFolder,
+  VSphereNetwork,
+  VSphereResourcePool,
+  VSphereTagCategory,
+} from '@shared/entity/provider/vsphere';
 import {NodeProvider} from '@shared/model/NodeProviderConstants';
 import {BaseFormValidator} from '@shared/validators/base-form.validator';
 
@@ -73,6 +78,12 @@ enum FolderState {
   Ready = 'Folder',
 }
 
+enum ResourcePoolState {
+  Empty = 'No Resource Pools Available',
+  Loading = 'Loading...',
+  Ready = 'Resource Pool',
+}
+
 enum TagCategoryState {
   Empty = 'No Tag Category Available',
   Loading = 'Loading...',
@@ -110,6 +121,8 @@ export class VSphereProviderExtendedComponent extends BaseFormValidator implemen
   private readonly _networkCombobox: FilteredComboboxComponent;
   @ViewChild('tagCategoryComboBox')
   private readonly _tagCategoryComboBox: FilteredComboboxComponent;
+  @ViewChild('resourcePoolCombobox')
+  private readonly _resourcePoolCombobox: FilteredComboboxComponent;
   readonly Controls = Controls;
   readonly FolderState = FolderState;
   isPresetSelected = false;
@@ -117,6 +130,8 @@ export class VSphereProviderExtendedComponent extends BaseFormValidator implemen
   isLoadingDatastores = false;
   folders: VSphereFolder[] = [];
   folderLabel = FolderState.Empty;
+  resourcePools: VSphereResourcePool[] = [];
+  resourcePoolLabel = ResourcePoolState.Empty;
   networkLabel = NetworkState.Empty;
   tagCategories: VSphereTagCategory[] = [];
   predefinedTagList: string[] = [];
@@ -210,7 +225,6 @@ export class VSphereProviderExtendedComponent extends BaseFormValidator implemen
 
     merge(
       this.form.get(Controls.DatastoreCluster).valueChanges,
-      this.form.get(Controls.ResourcePool).valueChanges,
       this.form.get(Controls.BaseFolderPath).valueChanges
     )
       .pipe(distinctUntilChanged(), takeUntil(this._unsubscribe))
@@ -231,11 +245,17 @@ export class VSphereProviderExtendedComponent extends BaseFormValidator implemen
       .pipe(debounceTime(this._debounceTime))
       .pipe(tap(_ => this._clearFolders()))
       .pipe(tap(_ => this._clearNetworks()))
-      .pipe(switchMap(_ => forkJoin([this._folderListObservable(), this._networkListObservable()])))
+      .pipe(tap(_ => this._clearResourcePools()))
+      .pipe(
+        switchMap(_ =>
+          forkJoin([this._folderListObservable(), this._networkListObservable(), this._resourcePoolListObservable()])
+        )
+      )
       .pipe(takeUntil(this._unsubscribe))
-      .subscribe(([folders, networks]) => {
+      .subscribe(([folders, networks, resourcePools]) => {
         this._loadFolders(folders);
         this._loadNetworks(networks);
+        this._loadResourcePools(resourcePools);
       });
 
     merge(this._credentialsChanged, this._presets.presetChanges)
@@ -255,6 +275,10 @@ export class VSphereProviderExtendedComponent extends BaseFormValidator implemen
 
   onFolderChange(folder: string): void {
     this._clusterSpecService.cluster.spec.cloud.vsphere.folder = folder;
+  }
+
+  onResourcePoolChange(resourcePool: string): void {
+    this._clusterSpecService.cluster.spec.cloud.vsphere.resourcePool = resourcePool;
   }
 
   onTagCategoryChange(tagCategory: string): void {
@@ -299,6 +323,8 @@ export class VSphereProviderExtendedComponent extends BaseFormValidator implemen
     switch (control) {
       case Controls.Folder:
         return 'Folder is used to group the provisioned virtual machines. It is mutually exclusive with Base Folder Path field.';
+      case Controls.ResourcePool:
+        return 'Resource pool the provisioned virtual machines will be placed in.';
     }
 
     return '';
@@ -359,6 +385,15 @@ export class VSphereProviderExtendedComponent extends BaseFormValidator implemen
 
     if (!_.isEmpty(this.folders)) {
       this.folderLabel = FolderState.Ready;
+      this._cdr.detectChanges();
+    }
+  }
+
+  private _loadResourcePools(resourcePools: VSphereResourcePool[]): void {
+    this.resourcePools = resourcePools;
+
+    if (!_.isEmpty(this.resourcePools)) {
+      this.resourcePoolLabel = ResourcePoolState.Ready;
       this._cdr.detectChanges();
     }
   }
@@ -428,6 +463,28 @@ export class VSphereProviderExtendedComponent extends BaseFormValidator implemen
       );
   }
 
+  private _resourcePoolListObservable(): Observable<VSphereResourcePool[]> {
+    return this._presets
+      .provider(NodeProvider.VSPHERE)
+      .username(
+        this._clusterSpecService.cluster.spec.cloud.vsphere.infraManagementUser?.username ||
+          this._clusterSpecService.cluster.spec.cloud.vsphere.username
+      )
+      .password(
+        this._clusterSpecService.cluster.spec.cloud.vsphere.infraManagementUser?.password ||
+          this._clusterSpecService.cluster.spec.cloud.vsphere.password
+      )
+      .datacenter(this._clusterSpecService.datacenter)
+      .resourcePools(this._onResourcePoolsLoading.bind(this))
+      .pipe(map(resourcePools => _.sortBy(resourcePools, rp => rp.path.toLowerCase())))
+      .pipe(
+        catchError(_ => {
+          this._clearResourcePools();
+          return of([]);
+        })
+      );
+  }
+
   private _tagCategoryListObservable(): Observable<VSphereTagCategory[]> {
     return this._presets
       .provider(NodeProvider.VSPHERE)
@@ -460,6 +517,18 @@ export class VSphereProviderExtendedComponent extends BaseFormValidator implemen
     this.folders = [];
     this.folderLabel = FolderState.Empty;
     this._folderCombobox.reset();
+    this._cdr.detectChanges();
+  }
+
+  private _onResourcePoolsLoading(): void {
+    this.resourcePoolLabel = ResourcePoolState.Loading;
+    this._cdr.detectChanges();
+  }
+
+  private _clearResourcePools(): void {
+    this.resourcePools = [];
+    this.resourcePoolLabel = ResourcePoolState.Empty;
+    this._resourcePoolCombobox?.reset();
     this._cdr.detectChanges();
   }
 
@@ -524,7 +593,6 @@ export class VSphereProviderExtendedComponent extends BaseFormValidator implemen
         cloud: {
           vsphere: {
             datastoreCluster: this.form.get(Controls.DatastoreCluster).value,
-            resourcePool: this.form.get(Controls.ResourcePool).value,
             basePath: this.form.get(Controls.BaseFolderPath).value,
           } as VSphereCloudSpec,
         } as CloudSpec,

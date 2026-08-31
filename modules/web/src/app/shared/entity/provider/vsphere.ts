@@ -23,6 +23,11 @@ export class VSphereFolder {
   path: string;
 }
 
+export class VSphereResourcePool {
+  name: string;
+  path: string;
+}
+
 export class VSphereDatastores {
   datastores: string[];
 }

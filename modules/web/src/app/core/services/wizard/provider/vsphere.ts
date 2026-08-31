@@ -18,6 +18,7 @@ import {
   VSphereDatastores,
   VSphereFolder,
   VSphereNetwork,
+  VSphereResourcePool,
   VSphereTagCategory,
   VSphereVMGroup,
 } from '@shared/entity/provider/vsphere';
@@ -29,6 +30,7 @@ import {Provider} from './provider';
 export class VSphere extends Provider {
   private readonly _networksUrl = `${this._newRestRoot}/projects/${this._projectID}/providers/vsphere/networks`;
   private readonly _foldersUrl = `${this._newRestRoot}/projects/${this._projectID}/providers/vsphere/folders`;
+  private readonly _resourcePoolsUrl = `${this._newRestRoot}/projects/${this._projectID}/providers/vsphere/resourcepools`;
   private readonly _tagCategoriesUrl = `${this._newRestRoot}/projects/${this._projectID}/providers/vsphere/tagcategories`;
   private readonly _vmGroupsUrl = `${this._newRestRoot}/projects/${this._projectID}/providers/vsphere/vmgroups`;
 
@@ -88,6 +90,20 @@ export class VSphere extends Provider {
     }
 
     return this._http.get<VSphereFolder[]>(this._foldersUrl, {
+      headers: this._headers,
+    });
+  }
+
+  resourcePools(onLoadingCb: () => void = null): Observable<VSphereResourcePool[]> {
+    if (!this._hasRequiredHeaders()) {
+      return EMPTY;
+    }
+
+    if (onLoadingCb) {
+      onLoadingCb();
+    }
+
+    return this._http.get<VSphereResourcePool[]>(this._resourcePoolsUrl, {
       headers: this._headers,
     });
   }

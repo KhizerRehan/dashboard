@@ -813,6 +813,10 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool) {
 		Handler(r.listProjectVSphereFolders())
 
 	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/vsphere/resourcepools").
+		Handler(r.listProjectVSphereResourcePools())
+
+	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/providers/vsphere/datastores").
 		Handler(r.listProjectVSphereDatastores())
 
@@ -1054,6 +1058,10 @@ func (r Routing) RegisterV2(mux *mux.Router, oidcKubeConfEndpoint bool) {
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/clusters/{cluster_id}/providers/vsphere/folders").
 		Handler(r.listVSphereFoldersNoCredentials())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/clusters/{cluster_id}/providers/vsphere/resourcepools").
+		Handler(r.listVSphereResourcePoolsNoCredentials())
 
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/clusters/{cluster_id}/providers/vsphere/tagcategories").
@@ -4698,6 +4706,30 @@ func (r Routing) listVSphereFoldersNoCredentials() http.Handler {
 	)
 }
 
+// swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/vsphere/resourcepools vsphere listVSphereResourcePoolsNoCredentials
+//
+// Lists resource pools from vsphere datacenter
+//
+//	Produces:
+//	- application/json
+//
+//	Responses:
+//	  default: errorResponse
+//	  200: []VSphereResourcePool
+func (r Routing) listVSphereResourcePoolsNoCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(provider.VsphereResourcePoolsWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter, r.caBundle)),
+		provider.DecodeVSphereNoCredentialsReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
 // swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/vsphere/vmgroups vsphere listVSphereVMGroupsNoCredentials
 //
 // Lists VM groups from vsphere datacenter
@@ -6811,6 +6843,28 @@ func (r Routing) listProjectVSphereFolders() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(provider.VsphereFoldersEndpoint(r.seedsGetter, r.presetProvider, r.userInfoGetter, r.caBundle)),
+		provider.DecodeVSphereProjectReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/providers/vsphere/resourcepools vsphere listProjectVSphereResourcePools
+//
+// Lists resource pools from vSphere datacenter.
+//
+//	Produces:
+//	- application/json
+//
+//	Responses:
+//	  default: errorResponse
+//	  200: []VSphereResourcePool
+func (r Routing) listProjectVSphereResourcePools() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.VsphereResourcePoolEndpoint(r.seedsGetter, r.presetProvider, r.userInfoGetter, r.caBundle)),
 		provider.DecodeVSphereProjectReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
