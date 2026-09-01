@@ -22,8 +22,8 @@ import (
 	"net/http"
 	"strings"
 
+	ec2 "github.com/LeanerCloud/ec2-instances-info"
 	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
-	ec2 "github.com/cristim/ec2-instances-info"
 
 	apiv1 "k8c.io/dashboard/v2/pkg/api/v1"
 	handlercommon "k8c.io/dashboard/v2/pkg/handler/common"
