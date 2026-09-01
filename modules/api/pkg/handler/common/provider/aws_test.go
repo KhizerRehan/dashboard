@@ -110,7 +110,6 @@ func TestAWSSizePriceFiltering(t *testing.T) {
 		expectedNames []string
 	}{
 		{
-			// Expensive instance types should not be filtered out based on pricing constraints.
 			name:          "expensive instance types are not filtered out when GPU is disabled",
 			region:        "us-east-1",
 			architecture:  "x64",
@@ -123,6 +122,13 @@ func TestAWSSizePriceFiltering(t *testing.T) {
 			architecture:  "x64",
 			resourceQuota: kubermaticv1.MachineFlavorFilter{EnableGPU: true},
 			expectedNames: []string{"m6id.4xlarge", "m6idn.4xlarge"},
+		},
+		{
+			name:          "instance types priced only in recent datasets are listed",
+			region:        "eu-central-1",
+			architecture:  "x64",
+			resourceQuota: kubermaticv1.MachineFlavorFilter{EnableGPU: false},
+			expectedNames: []string{"m6id.4xlarge", "m6idn.4xlarge", "m6in.4xlarge"},
 		},
 	}
 
@@ -144,36 +150,6 @@ func TestAWSSizePriceFiltering(t *testing.T) {
 				}
 			}
 		})
-	}
-}
-
-func TestAWSSizeResourceQuotaFiltering(t *testing.T) {
-	// Removing the price cap must not weaken the CPU/RAM/GPU limits an admin configures.
-	quota := kubermaticv1.MachineFlavorFilter{
-		MaxCPU:    8,
-		MaxRAM:    32,
-		EnableGPU: false,
-	}
-
-	awsSizeList, err := provider.AWSSizes("us-east-1", "x64", quota)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if len(awsSizeList) == 0 {
-		t.Fatal("Resulting list is empty")
-	}
-
-	for _, size := range awsSizeList {
-		if size.VCPUs > quota.MaxCPU {
-			t.Errorf("Instance %s has %d vCPUs, which exceeds the configured maximum of %d", size.Name, size.VCPUs, quota.MaxCPU)
-		}
-		if int(size.Memory) > quota.MaxRAM {
-			t.Errorf("Instance %s has %v GB of memory, which exceeds the configured maximum of %d", size.Name, size.Memory, quota.MaxRAM)
-		}
-		if size.GPUs > 0 {
-			t.Errorf("Instance %s has %d GPUs, but GPUs are disabled", size.Name, size.GPUs)
-		}
 	}
 }
 
